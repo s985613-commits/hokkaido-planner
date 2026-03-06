@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>北海道家族之行 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #E8F1F8; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .glass-tab { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(8px); }
+        .content-card { transition: all 0.3s ease; border: 1px solid #f0f4f8; }
+        .content-card:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+    <div id="app" class="max-w-md mx-auto min-h-screen relative shadow-2xl bg-[#E8F1F8]">
+        
+        <header class="relative h-[250px] w-full overflow-hidden">
+            <img src="Gemini_Generated_Image_njq1m8njq1m8njq1.jpg" class="w-full h-full object-cover" alt="Hokkaido Banner">
+            
+            <div class="absolute bottom-10 right-4 flex gap-2 glass-tab p-2 rounded-2xl shadow-lg border border-white/50">
+                <button @click="activeTab = 'itinerary'" :class="activeTab === 'itinerary' ? 'bg-blue-500 text-white' : 'text-blue-500'" class="p-3 rounded-xl transition-all"><i class="fa-solid fa-location-dot"></i></button>
+                <button @click="activeTab = 'info'" :class="activeTab === 'info' ? 'bg-blue-500 text-white' : 'text-blue-500'" class="p-3 rounded-xl transition-all"><i class="fa-solid fa-circle-info"></i></button>
+                <button @click="activeTab = 'shopping'" :class="activeTab === 'shopping' ? 'bg-blue-500 text-white' : 'text-blue-500'" class="p-3 rounded-xl transition-all"><i class="fa-solid fa-basket-shopping"></i></button>
+                <button @click="activeTab = 'expenses'" :class="activeTab === 'expenses' ? 'bg-blue-500 text-white' : 'text-blue-500'" class="p-3 rounded-xl transition-all"><i class="fa-solid fa-sack-dollar"></i></button>
+            </div>
+        </header>
+
+        <main class="-mt-8 pt-8 px-4 rounded-t-[40px] bg-white min-h-[calc(100vh-210px)] shadow-[0_-10px_30px_rgba(0,0,0,0.05)] pb-24">
+            
+            <div v-if="activeTab === 'itinerary'">
+                <div class="flex overflow-x-auto hide-scrollbar space-x-4 mb-6 pb-2">
+                    <div v-for="day in days" :key="day.date" 
+                         @click="selectedDate = day.date"
+                         :class="selectedDate === day.date ? 'bg-blue-500 text-white scale-105 shadow-md' : 'bg-blue-50 text-blue-400'"
+                         class="flex-shrink-0 w-16 h-20 rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer">
+                        <span class="text-xs font-bold uppercase">{{ day.weekday }}</span>
+                        <span class="text-xl font-bold">{{ day.dayNum }}</span>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50/50 p-4 rounded-3xl flex items-center justify-between mb-6 border border-blue-100">
+                    <div class="flex items-center">
+                        <i class="fa-solid fa-temperature-half text-blue-400 text-3xl mr-3"></i>
+                        <div>
+                            <div class="text-sm text-gray-500">預報氣溫 (函館/札幌)</div>
+                            <div class="text-xl font-bold text-gray-800">14°C - 21°C</div>
+                        </div>
+                    </div>
+                    <div class="text-right text-xs text-blue-400">9月氣候涼爽<br>建議帶薄外套</div>
+                </div>
+
+                <div class="space-y-6">
+                    <div v-for="(item, index) in filteredItinerary" :key="item.id">
+                        
+                        <div v-if="item.category === '航班'" class="bg-gradient-to-br from-blue-600 to-blue-400 p-5 rounded-[2rem] text-white shadow-lg">
+                            <div class="flex justify-between items-center mb-4">
+                                <span class="bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold">FLIGHT INFO</span>
+                                <span class="text-sm font-bold">{{ item.flightNo }}</span>
+                            </div>
+                            <div class="flex justify-between items-center px-2">
+                                <div class="text-center">
+                                    <p class="text-2xl font-bold">{{ item.from }}</p>
+                                    <p class="text-xs opacity-80">{{ item.depTime }}</p>
+                                </div>
+                                <div class="flex-1 border-t border-dashed border-white/50 mx-4 relative">
+                                    <i class="fa-solid fa-plane absolute -top-2 left-1/2 -translate-x-1/2 text-xs"></i>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-2xl font-bold">{{ item.to }}</p>
+                                    <p class="text-xs opacity-80">{{ item.arrTime }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-else class="content-card bg-gray-50 p-5 rounded-3xl relative">
+                            <div @click="openMap(item.name)" class="cursor-pointer">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span :class="getCategoryClass(item.category)" class="px-2 py-0.5 rounded-lg text-[10px] font-bold">
+                                        {{ item.category }}
+                                    </span>
+                                    <h3 class="font-bold text-gray-800">{{ item.name }}</h3>
+                                </div>
+                                <p v-if="item.notes" class="text-sm text-gray-600 leading-relaxed">{{ item.notes }}</p>
+                            </div>
+                            
+                            <div v-if="index < filteredItinerary.length - 1" class="absolute -bottom-6 left-8 flex items-center gap-2 text-blue-300 text-[10px] font-bold">
+                                <i class="fa-solid fa-car-side"></i>
+                                <span>交通移動中</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="activeTab === 'info'" class="space-y-6">
+                <div class="bg-blue-500 p-6 rounded-[2.5rem] text-white shadow-lg">
+                    <p class="text-[10px] uppercase tracking-widest opacity-70 mb-2">Exchange Rate Converter</p>
+                    <div class="flex items-center justify-between">
+                        <input type="number" v-model="jpyInput" class="bg-transparent text-3xl font-bold w-1/2 outline-none border-b border-white/30 pb-1">
+                        <span class="text-sm">JPY →</span>
+                        <div class="text-3xl font-bold">{{ (jpyInput * 0.21).toFixed(0) }} <span class="text-sm">TWD</span></div>
+                    </div>
+                </div>
+
+                <div v-for="section in infoData" :key="section.title" class="bg-gray-50 p-5 rounded-3xl">
+                    <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <i :class="section.icon" class="text-blue-500"></i> {{ section.title }}
+                    </h4>
+                    <div class="space-y-3">
+                        <div v-for="row in section.content" :key="row.label" class="flex justify-between items-start text-sm border-b border-gray-100 pb-2">
+                            <span class="text-gray-400 w-24">{{ row.label }}</span>
+                            <span class="text-gray-700 font-medium text-right flex-1">{{ row.value }}</span>
+                        </div>
+                    </div>
+                    <button v-if="section.nav" @click="openMap(section.nav)" class="w-full mt-4 py-2 bg-white text-blue-500 rounded-xl border border-blue-100 font-bold text-xs">
+                        開啟地圖導航
+                    </button>
+                </div>
+            </div>
+
+            <div v-if="activeTab === 'shopping' || activeTab === 'expenses'" class="flex flex-col items-center justify-center py-20 opacity-40">
+                <i class="fa-solid fa-folder-open text-5xl mb-4"></i>
+                <p>功能開發中，請點擊右下角按鈕新增資料</p>
+            </div>
+
+        </main>
+
+        <button class="fixed bottom-8 right-8 w-14 h-14 bg-blue-500 text-white rounded-full shadow-2xl flex items-center justify-center text-xl active:scale-90 transition-all">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue;
+
+        createApp({
+            setup() {
+                const activeTab = ref('itinerary');
+                const selectedDate = ref('2026-09-24');
+                const jpyInput = ref(1000);
+
+                const days = [
+                    { weekday: 'Thu', dayNum: '24', date: '2026-09-24' },
+                    { weekday: 'Fri', dayNum: '25', date: '2026-09-25' },
+                    { weekday: 'Sat', dayNum: '26', date: '2026-09-26' },
+                    { weekday: 'Sun', dayNum: '27', date: '2026-09-27' },
+                    { weekday: 'Mon', dayNum: '28', date: '2026-09-28' }
+                ];
+
+                // 根據你提供的行程資料填入景點資訊
+                const itineraryData = [
+                    // Day 1
+                    { id: 101, date: '2026-09-24', category: '航班', from: 'TPE', to: 'HKD', depTime: '07:00', arrTime: '11:30', flightNo: '虎航 IT0236' },
+                    { id: 102, date: '2026-09-24', category: '景點', name: '大沼國定公園', notes: '看湖泊風景與駒之岳，適合長輩平緩散步。' },
+                    { id: 103, date: '2026-09-24', category: '景點', name: '洞爺湖花火遊船', notes: '晚上搭船欣賞期間限定的洞爺湖花火大會。' },
+                    { id: 104, date: '2026-09-24', category: '住宿', name: '洞爺溫泉飯店 (華美/觀光/太陽宮)', notes: '入住溫泉區飯店，晚餐後可泡湯放鬆。' },
+                    // Day 2
+                    { id: 201, date: '2026-09-25', category: '景點', name: '登別地獄谷', notes: '特殊的火山地貌，可看到陣陣白煙升起。' },
+                    { id: 202, date: '2026-09-25', category: '景點', name: '尼克斯海洋公園', notes: '必看可愛的企鵝遊行！' },
+                    { id: 203, date: '2026-09-25', category: '景點', name: '小樽運河漫遊', notes: '逛逛八音盒館、北一硝子館，品嚐六花亭甜點。' },
+                    { id: 204, date: '2026-09-25', category: '住宿', name: '二世谷希爾頓飯店', notes: '【保證入住】五星希爾頓集團飯店。' },
+                    // Day 3
+                    { id: 301, date: '2026-09-26', category: '景點', name: '定山泉源公園 / 豐平峽水壩', notes: '欣賞自然景觀與水壩壯闊景色。' },
+                    { id: 302, date: '2026-09-26', category: '購物', name: '札幌貍小路商店街', notes: '自由購物與晚餐時間，藥妝與伴手禮熱區。' },
+                    { id: 303, date: '2026-09-26', category: '住宿', name: '札幌萬怡酒店', notes: '【保證入住】萬豪集團五星酒店。' },
+                    // Day 4
+                    { id: 401, date: '2026-09-27', category: '景點', name: '支芴湖', notes: '日本透明度極高的火山口湖。' },
+                    { id: 402, date: '2026-09-27', category: '景點', name: '洞爺湖展望台 / 熊牧場', notes: '俯瞰洞爺湖全景，並與可愛棕熊互動。' },
+                    { id: 403, date: '2026-09-27', category: '景點', name: '函館山夜景', notes: '搭乘纜車欣賞世界三大夜景之一。' },
+                    { id: 404, date: '2026-09-27', category: '住宿', name: '函館溫泉飯店', notes: '行程最後一晚，享受函館當地的溫泉與美食。' },
+                    // Day 5
+                    { id: 501, date: '2026-09-28', category: '景點', name: '函館傳統朝市', notes: '體驗最道地的海鮮早餐，可體驗釣烏賊。' },
+                    { id: 502, date: '2026-09-28', category: '航班', from: 'HKD', to: 'TPE', depTime: '12:30', arrTime: '15:45', flightNo: '虎航 IT0237' }
+                ];
+
+                const filteredItinerary = computed(() => itineraryData.filter(i => i.date === selectedDate.value));
+
+                const infoData = [
+                    { title: '航班詳細資訊', icon: 'fa-plane', content: [
+                        { label: '去程 (9/24)', value: 'IT0236 TPE 07:00 -> HKD 11:30' },
+                        { label: '回程 (9/28)', value: 'IT0237 HKD 12:30 -> TPE 15:45' }
+                    ]},
+                    { title: '精選住宿', icon: 'fa-hotel', content: [
+                        { label: '9/25 二世谷', value: 'Hilton Niseko Village (五星)' },
+                        { label: '9/26 札幌', value: 'Courtyard by Marriott (五星)' }
+                    ]},
+                    { title: '旅行提醒', icon: 'fa-bell', content: [
+                        { label: '人數', value: '8 位大人 (含 2 位長輩)' },
+                        { label: '行李限制', value: '虎航托運 20kg / 手提 10kg' }
+                    ]}
+                ];
+
+                const getCategoryClass = (cat) => {
+                    const dict = {
+                        '景點': 'bg-green-100 text-green-600',
+                        '住宿': 'bg-indigo-100 text-indigo-600',
+                        '購物': 'bg-pink-100 text-pink-600',
+                        '美食': 'bg-orange-100 text-orange-600'
+                    };
+                    return dict[cat] || 'bg-gray-100 text-gray-600';
+                };
+
+                const openMap = (name) => {
+                    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + ' 北海道')}`;
+                    window.open(url, '_blank');
+                };
+
+                return { activeTab, selectedDate, days, filteredItinerary, jpyInput, infoData, getCategoryClass, openMap };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
